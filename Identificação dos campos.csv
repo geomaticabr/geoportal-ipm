@@ -1,0 +1,20 @@
+CAMPO;DESCRIÇÃO
+cod_mun;Código do município, como definido pelo ibge
+nom_mun;Nome do município
+cod_regiao;Código da Grande Região Brasileira, como definido pelo ibge
+cod_uf;Código da Unidade da Federação, como definido pelo ibge
+sxraca;Código para identificação do sexo e raça
+qtd_pessoas;Quantidade de pessoas
+qtd_pes_pobres;Quantidade de pessoas pobres
+qtd_pes_vulneraveis;Quantidade de pessoas vulneráveis
+qtd_pes_pob_vul;Quantidade de pessoas pobres ou vulneráveis
+qtd_0a11;Quantidade de crianças de 0 a 11 anos
+qtd_0a11_pobres;Quantidade de crianças de 0 a 11 anos pobres
+qtd_0a11_vulneraveis;Quantidade de crianças de 0 a 11 anos vulneraveis
+qtd_0a11_pob_vul;Quantidade de crianças de 0 a 11 anos pobres ou vulneráveis
+IPM;Índice de Pobreza Multidimensional – IPM
+IPM_quintis;Posição do município nos quintis do IPM
+num_idhm;Índice de Desenvolvimento Humano Municipal – IDHM
+num_ivs;Índice de Vulnerabilidade Social
+num_ibeu;Índice de Bem Estar Urbano
+num_renda;Renda percapita média

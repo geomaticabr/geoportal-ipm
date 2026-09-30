@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Geoportal IPM por Sexo e Raça</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<style>
+:root{
+  --bg:#f4f5f7; --panel:#fff; --ink:#1f2933; --muted:#667085; --line:#e3e6ea; --accent:#b30000;
+  --q1:#fef0d9; --q2:#fdcc8a; --q3:#fc8d59; --q4:#e34a33; --q5:#b30000; --nd:#e8eaed;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:var(--ink);background:var(--bg);display:flex;flex-direction:column;font-size:14px}
+header{background:#1d2b4a;color:#fff;display:flex;align-items:center;gap:20px;padding:8px 20px;flex:none}
+header .nis{height:72px;width:auto}
+header h1{font-size:21px;margin:0;line-height:1.2}
+header h1 small{display:block;font-size:12.5px;font-weight:400;color:#c3cce0;margin-top:2px}
+header .parceiros{margin-left:auto;display:flex;align-items:center;gap:14px}
+header .parceiros span{font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#c3cce0}
+header .parceiros .lg{background:#fff;border-radius:6px;padding:4px 8px;display:flex}
+header .parceiros img{height:38px;width:auto}
+main{flex:1;min-height:0;display:grid;grid-template-columns:320px 1fr 360px;gap:12px;padding:12px}
+aside,.mapwrap{background:var(--panel);border:1px solid var(--line);border-radius:10px;min-height:0}
+aside{overflow-y:auto;padding:14px}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px}
+.sec{margin-bottom:18px}
+label{display:block;font-size:13px;font-weight:600;margin:10px 0 4px}
+select{width:100%;padding:8px;border:1px solid #c8cdd3;border-radius:6px;font:inherit;background:#fff}
+input[type=search]{width:100%;padding:8px;border:1px solid #c8cdd3;border-radius:6px;font:inherit}
+.busca{position:relative}
+#sug{position:absolute;left:0;right:0;top:100%;z-index:10;margin:2px 0 0;padding:0;list-style:none;background:#fff;border:1px solid #c8cdd3;border-radius:6px;box-shadow:0 4px 14px rgba(0,0,0,.15);max-height:260px;overflow-y:auto}
+#sug li{padding:7px 9px;cursor:pointer;display:flex;justify-content:space-between;gap:8px}
+#sug li small{color:var(--muted)}
+#sug li:hover,#sug li.on{background:#f0f2f4}
+#sug li.vazio{cursor:default;color:var(--muted)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid #c8cdd3;background:#fff;border-radius:6px;padding:6px 9px;font:inherit;font-size:12.5px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.chip i{width:14px;height:14px;border-radius:3px;border:1px solid rgba(0,0,0,.2);display:inline-block}
+.chip[aria-pressed=true]{border-color:var(--ink);background:#f0f2f4;font-weight:600;box-shadow:inset 0 0 0 1px var(--ink)}
+.hint{font-size:11.5px;color:var(--muted);margin-top:6px}
+.btn{width:100%;margin-top:12px;padding:8px;border:1px solid #c8cdd3;background:#fff;border-radius:6px;font:inherit;cursor:pointer}
+.btn:hover{background:#f0f2f4}
+.scope{font-size:13px;margin-bottom:10px}
+.scope b{font-size:15px}
+.cards{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.card{border:1px solid var(--line);border-radius:8px;padding:9px 10px;background:#fcfcfd}
+.card .t{font-size:11.5px;color:var(--muted);line-height:1.25;min-height:28px}
+.card .v{font-size:20px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.card .p{font-size:11.5px;color:var(--muted)}
+.card.pv{grid-column:span 2;background:#fff5f2;border-color:#f3c9bd}
+.grp{grid-column:span 2;font-size:12px;font-weight:700;margin-top:4px}
+.mapwrap{position:relative;overflow:hidden}
+#map{position:absolute;inset:0}
+.legend{position:absolute;left:10px;bottom:10px;background:rgba(255,255,255,.94);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;z-index:2}
+.legend b{display:block;margin-bottom:5px;font-size:12px}
+.legend div{display:flex;align-items:center;gap:6px;margin:2px 0}
+.legend i{width:26px;height:12px;border:1px solid rgba(0,0,0,.2)}
+.maplibregl-popup-content{padding:10px 12px;font-size:12.5px;min-width:250px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.25)}
+.pop h3{margin:0 0 6px;font-size:14px}
+.pop h3 span{font-weight:400;color:var(--muted)}
+.pop table{width:100%;border-collapse:collapse}
+.pop td{padding:1.5px 0}
+.pop td:last-child{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.pop .sep td{padding-top:6px;font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:400}
+.badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:11px;font-weight:700;color:#fff;margin-left:6px;vertical-align:1px}
+.chartbox{position:relative;height:290px}
+#detalhe .nome{font-size:16px;font-weight:700}
+#detalhe .sub{font-size:12.5px;color:var(--muted);margin:2px 0 10px}
+.ind{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:10px 0}
+.ind div{border:1px solid var(--line);border-radius:6px;padding:5px 7px;font-size:11px;color:var(--muted)}
+.ind b{display:block;font-size:14px;color:var(--ink)}
+footer{flex:none;text-align:center;font-size:11.5px;color:var(--muted);padding:0 12px 8px}
+@media (max-width:1100px){
+  body{height:auto;font-size:14px}
+  main{grid-template-columns:1fr;display:flex;flex-direction:column}
+  .mapwrap{height:65vh;min-height:380px;order:-1}
+  aside{overflow:visible}
+  header{flex-wrap:wrap}
+  header .parceiros{margin-left:0}
+}
+</style>
+</head>
+<body>
+<header>
+  <img class="nis" src="imagens/Logo_NIS.png" alt="NIS">
+  <h1>Pobreza Multidimensional por Sexo e Raça
+    <small>Índice de Pobreza Multidimensional (IPM) nos municípios brasileiros</small></h1>
+  <div class="parceiros">
+    <span>Realização</span>
+    <div class="lg"><img src="imagens/Logo_Geografia.png" alt="Geografia"></div>
+    <img src="imagens/Logo_ChildFund.png" alt="ChildFund Brasil">
+  </div>
+</header>
+
+<main>
+  <aside aria-label="Filtros e indicadores">
+    <div class="sec">
+      <h2>Filtros</h2>
+      <label for="fReg">Grande Região</label>
+      <select id="fReg"></select>
+      <label for="fUf">Unidade da Federação</label>
+      <select id="fUf"></select>
+      <label for="fMun">Município</label>
+      <div class="busca">
+        <input id="fMun" type="search" autocomplete="off" placeholder="Digite o nome do município…" role="combobox" aria-expanded="false" aria-controls="sug">
+        <ul id="sug" role="listbox" hidden></ul>
+      </div>
+      <label>Quintil do IPM</label>
+      <div class="chips" id="fQ"></div>
+      <div class="hint">Q1 = municípios com menor pobreza · Q5 = maior pobreza. Sem seleção, todos os quintis são exibidos. Os filtros são cumulativos.</div>
+      <button class="btn" id="reset">Limpar filtros</button>
+    </div>
+    <div class="sec">
+      <h2>Resumo do recorte</h2>
+      <div class="scope" id="scope"></div>
+      <div class="cards" id="cards"></div>
+    </div>
+  </aside>
+
+  <section class="mapwrap" aria-label="Mapa">
+    <div id="map"></div>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <aside id="detalhe" aria-label="Composição por sexo e raça">
+    <h2>Composição por sexo e raça</h2>
+    <div class="nome" id="dNome"></div>
+    <div class="sub" id="dSub"></div>
+    <div class="chartbox"><canvas id="chart"></canvas></div>
+    <div class="ind" id="dInd"></div>
+    <button class="btn" id="dVoltar" hidden>Voltar ao recorte filtrado</button>
+    <div class="hint" id="dHint">Clique em um município no mapa para ver a composição da sua população. Sem seleção, o gráfico mostra o recorte filtrado.</div>
+  </aside>
+</main>
+<footer>Fonte: IPM por sexo e raça (arquivo IPMporSexoeRaca.csv). Malha municipal simplificada (10%) – uso apenas para visualização.</footer>
+
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/pmtiles@3.2.0/dist/pmtiles.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+const QCOR = {1:'#fef0d9',2:'#fdcc8a',3:'#fc8d59',4:'#e34a33',5:'#b30000'};
+const QTXT = {1:'Q1 – menor pobreza',2:'Q2',3:'Q3',4:'Q4',5:'Q5 – maior pobreza'};
+const NOCOR = '#e8eaed';
+const SXRACA = [
+  ['Homem branco','#3b6ea5'],['Mulher branca','#8fb3dc'],['Homem negro','#8a4b0f'],['Mulher negra','#d9944a'],
+  ['Homem indígena','#2f7d4f'],['Mulher indígena','#8cc9a0'],['Ignorado','#9aa0a6']];
+const MUNL = 'BR_Municipios_2025 10 por cento';
+const BRASIL = [-74, -33.8, -28.8, 5.3];
+const nf = new Intl.NumberFormat('pt-BR',{maximumFractionDigits:0});
+const nd = (d)=>new Intl.NumberFormat('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const brl = new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'});
+const esc = s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let DATA, LIM;
+const state = {reg:'', uf:'', q:new Set(), sel:null};
+
+const file = n=>'pmtiles://'+new URL('base/'+encodeURI(n),location.href).href;
+const protocol = new pmtiles.Protocol();
+maplibregl.addProtocol('pmtiles', protocol.tile);
+['BR_Municipios_2025 10 por cento mapshifter.pmtiles','BR_UF_geodataviewer.pmtiles','BR_Regioes_2025_geodataviewer.pmtiles']
+  .forEach(n=>{const u=new URL('base/'+encodeURI(n),location.href).href; protocol.add(new pmtiles.PMTiles(u));});
+
+Promise.all([fetch('dados/municipios.json').then(r=>r.json()), fetch('dados/limites.json').then(r=>r.json())])
+  .then(([d,l])=>{DATA=d;LIM=l;init();});
+
+const map = new maplibregl.Map({
+  container:'map',
+  style:{version:8,sources:{},layers:[{id:'bg',type:'background',paint:{'background-color':'#dfe6ec'}}]},
+  bounds:BRASIL, fitBoundsOptions:{padding:10}, attributionControl:{compact:true}
+});
+map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
+let mapReady=false, dataReady=false;
+
+map.once('style.load',()=>{
+  map.addSource('reg',{type:'vector',url:file('BR_Regioes_2025_geodataviewer.pmtiles')});
+  map.addSource('uf',{type:'vector',url:file('BR_UF_geodataviewer.pmtiles')});
+  map.addSource('mun',{type:'vector',url:file('BR_Municipios_2025 10 por cento mapshifter.pmtiles'),promoteId:'CD_MUN'});
+  // Ordem (de baixo para cima): regiões < UFs < municípios (destaque); contornos de UF/região por cima
+  map.addLayer({id:'reg-fill',type:'fill',source:'reg','source-layer':'GR_simplificado',paint:{'fill-color':'#f1efe8'}});
+  map.addLayer({id:'uf-fill',type:'fill',source:'uf','source-layer':'uf_simplificado',paint:{'fill-color':'#e9e6dc','fill-opacity':.6}});
+  const qMatch=['match',['feature-state','q']];
+  for(const q of [1,2,3,4,5]) qMatch.push(q,QCOR[q]);
+  qMatch.push(NOCOR);
+  map.addLayer({id:'mun-fill',type:'fill',source:'mun','source-layer':MUNL,paint:{
+    'fill-color':['case',['==',['feature-state','on'],true],qMatch,NOCOR],
+    'fill-opacity':['case',['==',['feature-state','on'],true],.95,.7]}});
+  map.addLayer({id:'mun-line',type:'line',source:'mun','source-layer':MUNL,paint:{'line-color':'#fff','line-opacity':.55,
+    'line-width':['interpolate',['linear'],['zoom'],3,.15,7,.6]}});
+  map.addLayer({id:'uf-line',type:'line',source:'uf','source-layer':'uf_simplificado',paint:{'line-color':'#5b6470','line-width':['interpolate',['linear'],['zoom'],3,.6,7,1.4]}});
+  map.addLayer({id:'reg-line',type:'line',source:'reg','source-layer':'GR_simplificado',paint:{'line-color':'#2b323b','line-width':['interpolate',['linear'],['zoom'],3,1.4,7,2.4]}});
+  map.addLayer({id:'sel-line',type:'line',source:'mun','source-layer':MUNL,paint:{'line-color':'#111',
+    'line-width':['case',['==',['feature-state','sel'],true],2.5,['==',['feature-state','hover'],true],1.8,0]}});
+  mapReady=true; if(dataReady) applyFilters(false);
+});
+
+const popup = new maplibregl.Popup({closeButton:false,closeOnClick:false,offset:12,maxWidth:'300px'});
+let hoverId=null;
+map.on('mousemove','mun-fill',e=>{
+  const f=e.features&&e.features[0]; if(!f||!DATA) return;
+  const id=f.properties.CD_MUN, d=DATA[id];
+  if(!d||!passes(d)){clearHover();return;}
+  map.getCanvas().style.cursor='pointer';
+  if(hoverId!==id){
+    if(hoverId) map.setFeatureState({source:'mun',sourceLayer:MUNL,id:hoverId},{hover:false});
+    hoverId=id; map.setFeatureState({source:'mun',sourceLayer:MUNL,id},{hover:true});
+    popup.setHTML(popHTML(d,id));
+  }
+  popup.setLngLat(e.lngLat).addTo(map);
+});
+map.on('mouseleave','mun-fill',clearHover);
+function clearHover(){
+  map.getCanvas().style.cursor='';
+  if(hoverId) map.setFeatureState({source:'mun',sourceLayer:MUNL,id:hoverId},{hover:false});
+  hoverId=null; popup.remove();
+}
+map.on('click','mun-fill',e=>{
+  const f=e.features&&e.features[0]; if(!f||!DATA) return;
+  const id=f.properties.CD_MUN, d=DATA[id];
+  if(d&&passes(d)) select(id);
+});
+
+function popHTML(d,id){
+  const uf=LIM.ufs[String(d.u)];
+  const s=d.s, row=(a,b)=>`<tr><td>${a}</td><td>${b}</td></tr>`;
+  return `<div class="pop"><h3>${esc(d.n)} <span>${uf?esc(uf.sigla):''}</span><span class="badge" style="background:${d.q<=2?'#8a6d3b':QCOR[d.q]};${d.q<=2?'':''}">Q${d.q}</span></h3><table>
+   ${row('IPM',nd(2).format(d.ipm))}${row('IDHM',nd(3).format(d.idhm))}${row('IVS',nd(3).format(d.ivs))}${row('IBEU',nd(3).format(d.ibeu))}${row('Renda per capita média',brl.format(d.renda))}
+   <tr class="sep"><td colspan="2">Pessoas (total do município)</td></tr>
+   ${row('Pobres',nf.format(s.qtd_pes_pobres))}${row('Vulneráveis',nf.format(s.qtd_pes_vulneraveis))}${row('Pobres ou vulneráveis',nf.format(s.qtd_pes_pob_vul))}
+   <tr class="sep"><td colspan="2">Crianças de 0 a 11 anos</td></tr>
+   ${row('Pobres',nf.format(s.qtd_0a11_pobres))}${row('Vulneráveis',nf.format(s.qtd_0a11_vulneraveis))}${row('Pobres ou vulneráveis',nf.format(s.qtd_0a11_pob_vul))}
+   </table></div>`;
+}
+
+/* ---------- filtros ---------- */
+function passes(d){
+  if(state.reg && String(d.r)!==state.reg) return false;
+  if(state.uf && String(d.u)!==state.uf) return false;
+  if(state.q.size && !state.q.has(d.q)) return false;
+  return true;
+}
+function init(){
+  const fReg=document.getElementById('fReg');
+  fReg.innerHTML='<option value="">Brasil (todas)</option>'+Object.entries(LIM.regioes).sort((a,b)=>a[1].nome.localeCompare(b[1].nome,'pt')).map(([k,v])=>`<option value="${k}">${esc(v.nome)}</option>`).join('');
+  fillUf();
+  document.getElementById('fQ').innerHTML=[1,2,3,4,5].map(q=>`<button class="chip" data-q="${q}" aria-pressed="false" title="${QTXT[q]}"><i style="background:${QCOR[q]}"></i>Q${q}</button>`).join('');
+  fReg.onchange=()=>{state.reg=fReg.value;
+    if(state.uf && state.reg && LIM.ufs[state.uf].regiao!==state.reg) state.uf='';
+    fillUf(); applyFilters(true);};
+  document.getElementById('fUf').onchange=e=>{state.uf=e.target.value;
+    if(state.uf){state.reg=LIM.ufs[state.uf].regiao; fReg.value=state.reg; fillUf();}
+    applyFilters(true);};
+  document.getElementById('fQ').onclick=e=>{const b=e.target.closest('.chip'); if(!b) return;
+    const q=+b.dataset.q; state.q.has(q)?state.q.delete(q):state.q.add(q);
+    b.setAttribute('aria-pressed',state.q.has(q)); applyFilters(false);};
+  document.getElementById('reset').onclick=()=>{state.reg=state.uf='';state.q.clear();select(null);
+    fReg.value='';fillUf();document.querySelectorAll('.chip').forEach(b=>b.setAttribute('aria-pressed','false'));applyFilters(true);};
+  document.getElementById('dVoltar').onclick=()=>select(null);
+  setupBusca();
+  document.getElementById('legend').innerHTML='<b>Quintil do IPM</b>'+[1,2,3,4,5].map(q=>`<div><i style="background:${QCOR[q]}"></i>${QTXT[q]}</div>`).join('')+`<div><i style="background:${NOCOR}"></i>Sem dados / fora do filtro</div>`;
+  dataReady=true; if(mapReady) applyFilters(false); else renderPanels();
+}
+const norm=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+function setupBusca(){
+  const inp=document.getElementById('fMun'), ul=document.getElementById('sug');
+  const idx=Object.entries(DATA).map(([id,d])=>({id,d,k:norm(d.n)}));
+  let items=[], cur=-1;
+  const close=()=>{ul.hidden=true;inp.setAttribute('aria-expanded','false');cur=-1;};
+  const mark=()=>[...ul.children].forEach((li,i)=>li.classList.toggle('on',i===cur));
+  function render(){
+    const q=norm(inp.value.trim());
+    if(!q){close();return;}
+    // respeita os demais filtros (região, UF, quintil); prefixo antes de "contém"
+    const ok=idx.filter(o=>o.k.includes(q)&&passes(o.d));
+    ok.sort((a,b)=>(b.k.startsWith(q)-a.k.startsWith(q))||a.d.n.localeCompare(b.d.n,'pt'));
+    items=ok.slice(0,12); cur=-1;
+    ul.innerHTML=items.length?items.map((o,i)=>`<li role="option" data-i="${i}">${esc(o.d.n)}<small>${LIM.ufs[String(o.d.u)].sigla}${ok.length>12&&i===11?'':''}</small></li>`).join('')
+      :'<li class="vazio">Nenhum município encontrado com os filtros atuais</li>';
+    ul.hidden=false; inp.setAttribute('aria-expanded','true');
+  }
+  function pick(o){
+    inp.value=o.d.n; close();
+    if(mapReady&&o.d.b) map.fitBounds(o.d.b,{padding:80,maxZoom:9,duration:900});
+    select(o.id);
+  }
+  inp.addEventListener('input',()=>{render(); if(!inp.value) select(null);});
+  inp.addEventListener('focus',render);
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();if(!items.length)return;
+      cur=(cur+(e.key==='ArrowDown'?1:-1)+items.length)%items.length;mark();}
+    else if(e.key==='Enter'){const o=items[cur>=0?cur:0]; if(o){e.preventDefault();pick(o);}}
+    else if(e.key==='Escape') close();
+  });
+  ul.addEventListener('mousedown',e=>{const li=e.target.closest('li[data-i]'); if(li){e.preventDefault();pick(items[+li.dataset.i]);}});
+  inp.addEventListener('blur',close);
+  document.getElementById('reset').addEventListener('click',()=>{inp.value='';close();});
+}
+function fillUf(){
+  const s=document.getElementById('fUf');
+  s.innerHTML='<option value="">Todas as UFs</option>'+Object.entries(LIM.ufs).filter(([k,v])=>!state.reg||v.regiao===state.reg)
+    .sort((a,b)=>a[1].nome.localeCompare(b[1].nome,'pt')).map(([k,v])=>`<option value="${k}">${esc(v.nome)}</option>`).join('');
+  s.value=state.uf;
+}
+function applyFilters(zoom){
+  if(mapReady){
+    clearHover();
+    for(const [id,d] of Object.entries(DATA))
+      map.setFeatureState({source:'mun',sourceLayer:MUNL,id},{q:d.q,on:passes(d)});
+    if(zoom){
+      const b=state.uf?LIM.ufs[state.uf].bbox:state.reg?LIM.regioes[state.reg].bbox:BRASIL;
+      map.fitBounds(b,{padding:30,duration:900});
+    }
+  }
+  renderPanels();
+}
+
+/* ---------- cards e gráfico ---------- */
+const CARDS=[
+  ['Pessoas','grp'],
+  ['Pobres','qtd_pes_pobres','qtd_pessoas'],['Vulneráveis','qtd_pes_vulneraveis','qtd_pessoas'],['Pobres ou vulneráveis','qtd_pes_pob_vul','qtd_pessoas','pv'],
+  ['Crianças de 0 a 11 anos','grp'],
+  ['Pobres','qtd_0a11_pobres','qtd_0a11'],['Vulneráveis','qtd_0a11_vulneraveis','qtd_0a11'],['Pobres ou vulneráveis','qtd_0a11_pob_vul','qtd_0a11','pv']];
+function renderPanels(){
+  if(!DATA) return;
+  const tot={}, sx=Array(7).fill(0); let n=0;
+  const add=d=>{n++; for(const k in d.s) tot[k]=(tot[k]||0)+d.s[k]; d.sx.forEach((v,i)=>sx[i]+=v);};
+  for(const d of Object.values(DATA)) if(passes(d)) add(d);
+  let nome='Brasil'; if(state.uf) nome=LIM.ufs[state.uf].nome; else if(state.reg) nome='Região '+LIM.regioes[state.reg].nome;
+  const qtxt=state.q.size?` · quintil ${[...state.q].sort().map(q=>'Q'+q).join(', ')}`:'';
+  state.agg={nome:nome+qtxt,sx:[...sx],n,pop:tot.qtd_pessoas||0};
+  // município selecionado: os cards passam a mostrar apenas ele
+  const m=state.sel&&DATA[state.sel];
+  if(m){
+    for(const k in tot) delete tot[k];
+    n=0; add(m);
+    document.getElementById('scope').innerHTML=`<b>${esc(m.n)} – ${LIM.ufs[String(m.u)].sigla}</b> · município selecionado<br>${nf.format(tot.qtd_pessoas||0)} pessoas`;
+  } else
+    document.getElementById('scope').innerHTML=`<b>${esc(nome)}</b>${qtxt}<br>${nf.format(n)} municípios · ${nf.format(tot.qtd_pessoas||0)} pessoas`;
+  document.getElementById('cards').innerHTML=CARDS.map(c=>{
+    if(c[1]==='grp') return `<div class="grp">${c[0]}</div>`;
+    const v=tot[c[1]]||0, base=tot[c[2]]||0;
+    return `<div class="card ${c[3]||''}"><div class="t">${c[0]}</div><div class="v">${nf.format(v)}</div><div class="p">${base?nd(1).format(v/base*100)+'% do total':'–'}</div></div>`;}).join('');
+  renderDetail();
+}
+let chart;
+function select(id){
+  if(state.sel&&mapReady) map.setFeatureState({source:'mun',sourceLayer:MUNL,id:state.sel},{sel:false});
+  state.sel=id;
+  if(id&&mapReady) map.setFeatureState({source:'mun',sourceLayer:MUNL,id},{sel:true});
+  renderPanels();
+}
+function renderDetail(){
+  let nome,sub,sx,ind='';
+  const d=state.sel&&DATA[state.sel];
+  if(d){
+    const uf=LIM.ufs[String(d.u)];
+    nome=d.n+' – '+uf.sigla; sub=`${uf.nome} · Região ${LIM.regioes[String(d.r)].nome} · quintil Q${d.q} · ${nf.format(d.s.qtd_pessoas)} pessoas`; sx=d.sx;
+    ind=[['IPM',nd(2).format(d.ipm)],['IDHM',nd(3).format(d.idhm)],['IVS',nd(3).format(d.ivs)],['IBEU',nd(3).format(d.ibeu)],['Renda p.c.',brl.format(d.renda)]]
+      .map(([a,b])=>`<div>${a}<b>${b}</b></div>`).join('');
+  } else { const a=state.agg; nome=a.nome; sub=`Recorte filtrado · ${nf.format(a.n)} municípios · ${nf.format(a.pop)} pessoas`; sx=a.sx; }
+  document.getElementById('dNome').textContent=nome;
+  document.getElementById('dSub').textContent=sub;
+  document.getElementById('dInd').innerHTML=ind;
+  document.getElementById('dVoltar').hidden=!d;
+  const total=sx.reduce((a,b)=>a+b,0)||1;
+  const pct=sx.map(v=>v/total*100);
+  const cfg={labels:SXRACA.map(s=>s[0]),datasets:[{data:pct,backgroundColor:SXRACA.map(s=>s[1]),borderRadius:3}]};
+  if(!chart){
+    chart=new Chart(document.getElementById('chart'),{type:'bar',data:cfg,plugins:[{id:'lbl',afterDatasetsDraw(c){
+      const ctx=c.ctx; ctx.save(); ctx.font='600 11px system-ui'; ctx.fillStyle='#1f2933'; ctx.textBaseline='middle';
+      c.getDatasetMeta(0).data.forEach((b,i)=>ctx.fillText(nd(1).format(c.data.datasets[0].data[i])+'%',b.x+5,b.y)); ctx.restore();}}],
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:38}},
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${nd(1).format(c.parsed.x)}% · ${nf.format(chart._abs[c.dataIndex])} pessoas`}}},
+        scales:{x:{beginAtZero:true,ticks:{callback:v=>v+'%'},grid:{color:'#eef0f2'},title:{display:true,text:'% da população'}},y:{grid:{display:false}}}}});
+  } else { chart.data=cfg; }
+  chart._abs=sx;
+  chart.update();
+}
+</script>
+</body>
+</html>
